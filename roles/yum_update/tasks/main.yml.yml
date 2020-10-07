@@ -1,0 +1,48 @@
+---
+#Tasks file to update centos packages as needed
+
+- name: "Gather service facts"
+  service_facts:
+
+- name: "Set package list fact"
+  set_fact:
+    package_list: |
+      {%- set package_list = [] -%}
+      {%- for major_release in yum_packages -%}
+        {%- if major_release.version in ansible_distribution_major_version -%}
+          {%- for package in major_release.packages -%}
+            {{ package_list.append(package) }}
+          {%- endfor -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ package_list }}
+- name: "Remove /etc/yum.repos.d/includes directory"
+  file:
+    path: /etc/yum.repos.d/include
+    state: absent
+    
+- name: "Stop puppet-agent"
+  service:
+    name: puppetagent
+    state: stopped
+  notify: Start puppet
+  when: ansible_facts.services['puppetagent.service'] is defined
+   
+- name: "Update packages"
+  yum:
+    name: "{{ package_list }}"
+    state: latest
+    update_only: yes
+  async: 3600
+  poll: 0
+  register: yum_updates
+
+- name: "Check on package updates"
+  async_status:
+    jid: "{{ yum_updates.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 360
+  delay: 10
+
+...

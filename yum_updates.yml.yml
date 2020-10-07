@@ -1,0 +1,15 @@
+---
+#Play to update all centos systems with site_yum_packages
+
+- hosts: all
+  become: yes
+  
+  tasks:
+    - name: "Update yum packages"
+      include_role:
+        name: "{{ playbook_dir }}/roles/yum_update"
+      vars:
+        yum_packages: "{{ site_yum_packages }}"
+      when: '"CentOS" in ansible_distribution'
+        
+...

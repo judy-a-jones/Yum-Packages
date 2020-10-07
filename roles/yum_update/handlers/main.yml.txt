@@ -1,0 +1,9 @@
+---
+#Handlers for yum_updates
+
+- name: Start puppet
+  service:
+    name: puppetagent
+    state: restarted
+
+...
